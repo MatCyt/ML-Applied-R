@@ -31,7 +31,7 @@ predictions = predict(model, x_test)
 confusionMatrix(predictions$class, y_test)
 
 
-#### k-fold cross validation
+#### k-fold cross validation ----
 
 # train control, number of folds and method
 train_control = trainControl(method="cv", number=10)
@@ -43,7 +43,7 @@ model = train(Species~., data=iris, trControl=train_control, method="nb", metric
 print(model)
 
 
-#### repeated k-fold cross validation
+#### repeated k-fold cross validation ----
 
 # define training control
 train_control = trainControl(method="repeatedcv", number=10, repeats=3)

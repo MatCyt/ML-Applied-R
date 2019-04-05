@@ -1,4 +1,4 @@
-#### Model perfomance and Classification performance
+#### Model perfomance Evaluation
 # https://lgatto.github.io/IntroMachineLearningWithR/supervised-learning.html
 
 # libraries ----
@@ -56,3 +56,31 @@ model = lm(price ~ ., data = diamonds_train)
 p = predict(model, diamonds_test)
 
 RMSE(p, diamonds_test$price)
+
+
+### CROSS-VALIDATION ----
+
+# We specify the method (the learning algorithm) we want to use. "lm" for now
+# We then set the out-of-sample training procedure to 10-fold cross validation (method = "cv" and number = 10). 
+# To simplify the output in the material for better readability, we set the verbosity flag to FALSE, 
+# but it is useful to set it to TRUE in interactive mode.
+
+set.seed(42)
+
+model =  train(price ~ ., diamonds,
+               method = "lm", 
+               trControl = trainControl(method = "cv", 
+                                        number = 10, 
+                                        verboseIter = F))
+model
+summary(model)
+model$results
+
+RMSE(p, diamonds$price)
+
+p = predict(model, diamonds)
+error = p - diamonds$price
+rmse_xval = sqrt(mean(error^2)) ## xval RMSE
+rmse_xval
+
+
