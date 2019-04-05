@@ -52,3 +52,7 @@ diamonds_train = diamonds[ trainIndex,]
 diamonds_test = diamonds[-trainIndex,]
 
 model = lm(price ~ ., data = diamonds_train)
+
+p = predict(model, diamonds_test)
+
+RMSE(p, diamonds_test$price)
