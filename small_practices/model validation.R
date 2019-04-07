@@ -1,4 +1,4 @@
-#### Model perfomance Evaluation
+#### Model perfomance Evaluation - Validation
 # https://lgatto.github.io/IntroMachineLearningWithR/supervised-learning.html
 
 # libraries ----
