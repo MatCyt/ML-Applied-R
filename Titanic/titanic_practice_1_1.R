@@ -234,3 +234,30 @@ library(mlr)
 train_input = full[,cols2]  %>% filter(!is.na(Survived) )
 train_input$Survived = as.factor(train_input$Survived)
 
+# Classification Task
+task = makeClassifTask(data = train_input, target = "Survived")
+
+# Make Learner
+xgb_learner <- makeLearner("classif.xgboost")
+
+# Train
+mod = train(xgb_learner, task)
+
+# Predict on training data
+pred = predict(mod, task = task)
+print(performance(pred, measures = list("acc" = acc)))
+
+
+# Save for Kaggle upload
+test_data = full %>% filter(is.na(Survived) ) 
+test_passengersID = test_data[,c('PassengerId')]
+test_input = test_data[,cols]
+
+
+# Predict on test
+pred = as.data.frame(predict(mod,newdata = test_input))
+
+
+# write to csv
+colnames(pred) = c("Survived")
+write.csv(cbind(test_passengersID,pred),'output.csv', quote = FALSE, row.names = FALSE)
