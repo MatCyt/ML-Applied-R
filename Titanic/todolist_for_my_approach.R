@@ -15,4 +15,7 @@ full %>%
 # TODO better age value imputation
 
 
-# TODO what happens with character variables if not converted
+# TODO what happens with character variables if not converted - compare strings and not
+
+
+# TODO linear regression for Age prediction OR decision tree
