@@ -19,3 +19,6 @@ full %>%
 
 
 # TODO linear regression for Age prediction OR decision tree
+
+
+# TODO Survival % by age - not simply child < 18
