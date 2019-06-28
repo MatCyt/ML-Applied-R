@@ -160,18 +160,56 @@ options(warn=-1)
 
 subsets = c(1:5, 10, 15, 18)
 
-ctrl = rfeControl(functions = rfFuncs,
+ctrl = rfeControl(functions = rfFuncs, # specify the model used, here Random Forest
                    method = "repeatedcv",
                    repeats = 5,
                    verbose = FALSE)
 
 lmProfile = rfe(x=trainData[, 1:18], y=trainData$Purchase,
-                 sizes = subsets,
-                 rfeControl = ctrl)
+                 sizes = subsets, # determines what all model sizes (the number of most important features) the rfe will use. like 1 to 5, 10, 15, 18
+                 rfeControl = ctrl) # rfeControl parameter on the other hand receives the output of the rfeControl() as values.
 
 lmProfile
 
-# sizes determines what all model sizes (the number of most important features) the rfe should consider. like 1 to 5, 10, 15, 18
-# The rfeControl parameter on the other hand receives the output of the rfeControl() as values.
-
 # here it seems that model with only 3 variables outperform model with 18
+
+
+
+
+# 5. TRAINING AND TUNING THE MODEL ----------------------------------------
+
+names(getModelInfo()) # all the models
+modelLookup('rf') # check model details
+
+# 5.1 Training and interpreting the results
+
+# using Multivariate Adaptive Regression Splines (MARS) using method = 'earth'
+modelLookup('earth')
+
+# Set the seed for reproducibility
+set.seed(100)
+
+# Train the model using randomForest and predict on the training data itself.
+model_mars = train(Purchase ~ ., data=trainData, method='earth')
+fitted = predict(model_mars)
+
+# HOW IS USING TRAIN() DIFFERENT THAN USING JUST ALGORITHM FUNCTION DIRECTLY?
+# on top of building the model, train() can do also:
+# 1. Cross validation
+# 2. Parameter tuning
+# 3. Choose the optimal model based on a given evalueation metric
+# 4. Preprocess predictors
+
+model_mars
+# hyper parameters (number of trees and interaction depths were tested and basic cross validation was applied)
+
+plot(model_mars, main="Model Accuracies with MARS")
+
+
+# 5.2 Variable importance
+varimp_mars = varImp(model_mars)
+plot(varimp_mars, main="Variable Importance with MARS")
+
+
+# 5.3 Prepare the test dataset and predict
+
