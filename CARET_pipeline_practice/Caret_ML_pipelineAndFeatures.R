@@ -145,7 +145,7 @@ featurePlot(x = trainData[, 1:18],
 
 
 
-# FEATURE SELECTION - RECURSIVE FEATURE ELIMINATION -----------------------
+# 4. FEATURE SELECTION - RECURSIVE FEATURE ELIMINATION -----------------------
 
 # how does recursive feature elimination work?
 # 1. Build a ML model on a training dataset and estimate the feature importances on the test dataset.
@@ -213,3 +213,32 @@ plot(varimp_mars, main="Variable Importance with MARS")
 
 # 5.3 Prepare the test dataset and predict
 
+# Now in order to use the model to predict on new data, the new data has to be preprocessed and transformed 
+# just the way we did on the training data.
+
+# Thanks to caret, all the information required for pre-processing is stored in the 
+# respective preProcess model and dummyVar model.
+# So if you used CARET "models" for processing you can just re-use them on the test set, quick and easy
+
+# You need to pass the testData through these models in the same sequence as you did last time:
+# preProcess_missingdata_model –> dummies_model –> preProcess_range_model
+
+# Step 1: Impute missing values 
+testData2 = predict(preProcess_missingdata_model, testData)  
+
+# Step 2: Create one-hot encodings (dummy variables)
+testData3 = predict(dummies_model, testData2)
+
+# Step 3: Transform the features to range between 0 and 1
+testData4 = predict(preProcess_range_model, testData3)
+
+# View
+head(testData4[, 1:10])
+
+
+# 5.4 PREDICT ON TEST DATA
+predicted = predict(model_mars, testData4)
+head(predicted)
+
+
+# 5.5 
