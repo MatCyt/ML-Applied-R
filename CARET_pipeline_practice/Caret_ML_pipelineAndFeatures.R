@@ -241,4 +241,182 @@ predicted = predict(model_mars, testData4)
 head(predicted)
 
 
-# 5.5 
+# 5.5 Confusion Matrix
+
+# by setting mode = "everything" nearly all classification evaluation metrics are computed
+
+# Compute the confusion matrix
+confusionMatrix(reference = testData$Purchase, 
+                data = predicted, 
+                mode='everything', 
+                positive='MM')
+
+
+
+# 6. HYPERPARAMETERS TUNING FOR MODEL OPTIMIZATION ------------------------
+
+# There are two main ways to do hyper parameter tuning using the train():
+# 1 - Set the tuneLength
+# Number of unique values for tuning parameters that Caret will test. It will decide automatically about values to use
+
+# 2 - Define and set the tuneGrid
+#  if you want to explicitly control what values should be considered for each parameter - define tuneGrid
+
+
+# 7.1 Set up trainControl
+# inside train function trControl takes input from trainControl
+# used for definining cross validation method and summary function
+
+# several different cross-validation methods:
+# boot for Bootstrapping, cv for cross validation, repeatedcv, LOOCV leave one out cross validation and other
+
+# summary function is for summarising the results (specifisity, ROC etc):
+# twoClassSummary if Y is binnary or multiClassSummary if it is a multiclass 
+
+# setting classProbs=T the probability scores are generated instead of directly predicting the class with pre-defined cutoff 0.5
+
+# Define the training control
+fitControl = trainControl(
+  method = 'cv',                   # k-fold cross validation
+  number = 5,                      # number of folds
+  savePredictions = 'final',       # saves predictions for optimal tuning parameter
+  classProbs = T,                  # should class probabilities be returned
+  summaryFunction=twoClassSummary  # results summary function
+) 
+
+
+# 7.2 HyperParameter tuning - with tuneLength
+
+# Step 1: Tune hyper parameters by setting tuneLength
+set.seed(100)
+model_mars2 = train(Purchase ~ ., 
+                    data=trainData, 
+                    method='earth', # rf
+                    tuneLength = 5, # 5 default hyperparameters for random forest to be tested
+                    metric='ROC', 
+                    trControl = fitControl) 
+model_mars2
+
+# Step 2: Predict on testData and Compute the confusion matrix
+predicted2 = predict(model_mars2, testData4)
+
+confusionMatrix(reference = testData$Purchase, 
+                data = predicted2, 
+                mode='everything', 
+                positive='MM')
+
+# 7.3 HyperParameter tuning - with tuneGrid
+
+# Step 1: Define the tuneGrid
+marsGrid =  expand.grid(nprune = c(2, 4, 6, 8, 10), 
+                         degree = c(1, 2, 3))
+
+# Step 2: Tune hyper parameters by setting tuneGrid
+set.seed(100)
+model_mars3 = train(Purchase ~ ., data=trainData, method='earth', metric='ROC', tuneGrid = marsGrid, trControl = fitControl)
+model_mars3
+
+# Step 3: Predict on testData and Compute the confusion matrix
+predicted3 = predict(model_mars3, testData4)
+
+confusionMatrix(reference = testData$Purchase, 
+                data = predicted3, 
+                mode='everything', 
+                positive='MM')
+
+
+# 7. EVALUATE MULTIPLE ALGORITHMS -----------------------------------------
+
+# resamples() to compare them
+
+# Run few algorithms
+set.seed(100)
+
+# 7.1 Train the model using Adaboost
+model_adaboost = train(Purchase ~ ., data=trainData, method='adaboost', tuneLength=2, trControl = fitControl)
+model_adaboost
+
+# 7.2 Train the model using Random Forest
+model_rf = train(Purchase ~ ., data=trainData, method='rf', tuneLength=5, trControl = fitControl)
+model_rf
+
+# 7.3 Train the model using xgBoost Dart
+model_xgbDART = train(Purchase ~ ., data=trainData, method='xgbDART', tuneLength=5, trControl = fitControl, verbose=F)
+model_xgbDART
+
+# 7.4 Train the model using SVM
+model_svmRadial = train(Purchase ~ ., data=trainData, method='svmRadial', tuneLength=15, trControl = fitControl)
+model_svmRadial
+
+
+# 7.5 Compare models
+# Compare model performances using resample()
+models_compare = resamples(list(ADABOOST=model_adaboost, 
+                                RF=model_rf, 
+                                XGBDART=model_xgbDART, 
+                                MARS=model_mars3, 
+                                SVM=model_svmRadial))
+
+# Summary of the models performances
+summary(models_compare)
+
+# Draw box plots to compare models
+scales = list(x=list(relation="free"), y=list(relation="free"))
+bwplot(models_compare, scales=scales)
+
+
+
+# 8. MODELS ENSEMBLE ------------------------------------------------------
+
+# 8.1 COMPARE and Ensemple results from multiple models using caretEnsemple
+
+# similarly to previous approach. Indead of using caret::train() multiple times you specify the list
+# and pass all the models into caretEnsemble::caret(list) 
+
+library(caretEnsemble)
+
+# Stacking Algorithms - Run multiple algos in one call.
+trainControl = trainControl(method="repeatedcv",  # classic trainControl as before
+                             number=10, 
+                             repeats=3,
+                             savePredictions=TRUE, 
+                             classProbs=TRUE)
+
+algorithmList = c('rf', 'adaboost', 'earth', 'xgbDART', 'svmRadial') # specify the algorithms you would like to use
+
+set.seed(100)
+
+models = caretList(Purchase ~ ., 
+                   data=trainData, 
+                   trControl=trainControl, 
+                   methodList=algorithmList)  # run all the models in the list
+
+results = resamples(models) # compare the performance
+summary(results)
+
+
+# 8.2 Ensemple predictions from many models using caretEnsemble
+
+# using caretStack()
+# you need to have the the previous models trained and stored in this list - as in the past step
+
+# then you create a NEW train control
+# Create the trainControl
+set.seed(101)
+stackControl = trainControl(method="repeatedcv", 
+                             number=10, 
+                             repeats=3,
+                             savePredictions=TRUE, 
+                             classProbs=TRUE)
+
+# Ensemble the predictions of `models` to form a new combined prediction based on glm
+stack.glm = caretStack(models, 
+                       method="glm", 
+                       metric="Accuracy", 
+                       trControl=stackControl)
+print(stack.glm)
+
+
+# Predict on testData
+stack_predicteds = predict(stack.glm, newdata=testData4)
+head(stack_predicteds)
